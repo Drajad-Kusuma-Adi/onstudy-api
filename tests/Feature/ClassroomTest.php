@@ -63,6 +63,28 @@ class ClassroomTest extends TestCase
         return json_decode($response->getContent())->material->id;
     }
 
+    public function create_submission()
+    {
+        $user = $this->withHeaders([
+            'Accept' => 'application/json'
+        ])->post($this->baseUrl.'/auth/register', [
+            'username' => $this->faker->name,
+            'email' => $this->faker->email,
+            'password' => $this->faker->password,
+            'method' => 'Email'
+        ]);
+
+        $response = $this->withHeaders([
+            'Accept' => 'application/json'
+        ])->post($this->baseUrl.'/submissions', [
+            'user_id' => json_decode($user->getContent())->user->id,
+            'material_id' => $this->create_material(),
+            'comment' => "I did this task!"
+        ]);
+
+        return json_decode($response->getContent())->submission->id;
+    }
+
     // Classroom happy path tests
 
     public function test_get_classrooms()
@@ -104,8 +126,6 @@ class ClassroomTest extends TestCase
         $response = $this->withHeaders([
             'Accept' => 'application/json'
         ])->delete($this->baseUrl.'/classrooms/'.$this->create_classroom());
-
-        Log::info($response->getContent());
 
         $this->assertEquals(200, $response->getStatusCode());
     }
@@ -154,6 +174,44 @@ class ClassroomTest extends TestCase
         $response = $this->withHeaders([
             'Accept' => 'application/json'
         ])->delete($this->baseUrl.'/materials/'.$this->create_material());
+
+        $this->assertEquals(200, $response->getStatusCode());
+    }
+
+    public function test_read_submissions_on_a_material()
+    {
+        $response = $this->withHeaders([
+            'Accept' => 'application/json'
+        ])->get($this->baseUrl.'/materials/'.$this->create_material().'/submissions');
+
+        $this->assertEquals(200, $response->getStatusCode());
+    }
+
+    public function test_read_submission_by_id()
+    {
+        $response = $this->withHeaders([
+            'Accept' => 'application/json'
+        ])->get($this->baseUrl.'/submissions/'.$this->create_submission());
+
+        $this->assertEquals(200, $response->getStatusCode());
+    }
+
+    public function test_update_submission()
+    {
+        $response = $this->withHeaders([
+            'Accept' => 'application/json'
+        ])->post($this->baseUrl.'/submissions/'.$this->create_submission(), [
+            'grade' => 100
+        ]);
+
+        $this->assertEquals(200, $response->getStatusCode());
+    }
+
+    public function test_delete_submission()
+    {
+        $response = $this->withHeaders([
+            'Accept' => 'application/json'
+        ])->delete($this->baseUrl.'/submissions/'.$this->create_submission());
 
         $this->assertEquals(200, $response->getStatusCode());
     }

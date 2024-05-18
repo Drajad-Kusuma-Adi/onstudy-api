@@ -16,7 +16,8 @@ return new class extends Migration
             $table->uuid('user_id');
             $table->uuid('material_id');
             $table->integer('grade')->nullable();
-            $table->string('file');
+            $table->string('file')->nullable();
+            $table->string('comment')->nullable();
             $table->timestamps();
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade')->onUpdate('cascade');
             $table->foreign('material_id')->references('id')->on('materials')->onDelete('cascade')->onUpdate('cascade');

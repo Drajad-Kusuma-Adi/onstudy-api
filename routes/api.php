@@ -3,7 +3,9 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\MaterialController;
+use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\UserController;
+use App\Models\Submission;
 // use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -37,3 +39,9 @@ Route::get('/v1/materials', [MaterialController::class, 'read']);
 Route::get('/v1/materials/{id}', [MaterialController::class, 'readById']);
 Route::post('/v1/materials/{id}', [MaterialController::class, 'update']);
 Route::delete('/v1/materials/{id}', [MaterialController::class, 'delete']);
+// Submissions REST API
+Route::post('/v1/submissions', [SubmissionController::class, 'create']);
+Route::get('/v1/materials/{materialId}/submissions', [SubmissionController::class, 'read']);
+Route::get('/v1/submissions/{id}', [SubmissionController::class, 'readById']);
+Route::post('/v1/submissions/{id}', [SubmissionController::class, 'update']);
+Route::delete('/v1/submissions/{id}', [SubmissionController::class, 'delete']);
