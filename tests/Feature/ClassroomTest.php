@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 class ClassroomTest extends TestCase
