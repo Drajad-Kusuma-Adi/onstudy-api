@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('classes', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('title');
-            $table->text('description');
+            $table->text('description')->nullable();
             $table->enum('subject', ['Sains', 'Matematika', 'Bahasa', 'Teknologi', 'Sosial', 'Seni']);
             $table->string('photo')->nullable();
             $table->timestamps();

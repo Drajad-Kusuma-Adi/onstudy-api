@@ -1,9 +1,12 @@
 <?php
 
 use Tests\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class UserTest extends TestCase
 {
+    use RefreshDatabase;
+
     private $faker;
     protected function setUp(): void
     {
@@ -11,9 +14,8 @@ class UserTest extends TestCase
         parent::setUp();
     }
 
-    private function register_new_user()
+    private function registerNewUser()
     {
-        // Register new user
         $registerResponse = $this->withHeaders([
             'Accept' => 'application/json',
         ])->post($this->baseUrl.'/auth/register', [
@@ -26,7 +28,6 @@ class UserTest extends TestCase
         return json_decode($registerResponse->getContent())->user->id;
     }
 
-    // Happy path
     public function test_get_users()
     {
         $usersResponse = $this->withHeaders([
@@ -34,35 +35,43 @@ class UserTest extends TestCase
         ])->get($this->baseUrl.'/users');
 
         $this->assertEquals(200, $usersResponse->getStatusCode());
-        $this->assertStringContainsString('users', $usersResponse->getContent());
+        $this->assertStringContainsString('data', $usersResponse->getContent());
     }
+
     public function test_get_user_by_id()
     {
+        $userId = $this->registerNewUser();
+
         $userResponse = $this->withHeaders([
             'Accept' => 'application/json',
-        ])->get($this->baseUrl.'/users/'.$this->register_new_user());
+        ])->get($this->baseUrl."/users/{$userId}");
 
         $this->assertEquals(200, $userResponse->getStatusCode());
         $this->assertStringContainsString('user', $userResponse->getContent());
     }
+
     public function test_update_user()
     {
+        $userId = $this->registerNewUser();
+
         $response = $this->withHeaders([
             'Accept' => 'application/json',
-        ])->post($this->baseUrl.'/users/'.$this->register_new_user(), [
+        ])->put($this->baseUrl."/users/{$userId}", [
             'username' => $this->faker->userName,
             'institution' => $this->faker->word,
-            // 'photo' => Storage::get('penguin.jpg')
             'photo' => null
         ]);
 
         $this->assertEquals(200, $response->getStatusCode());
     }
+
     public function test_delete_user()
     {
+        $userId = $this->registerNewUser();
+
         $response = $this->withHeaders([
             'Accept' => 'application/json',
-        ])->delete($this->baseUrl.'/users/'.$this->register_new_user());
+        ])->delete($this->baseUrl."/users/{$userId}");
 
         $this->assertEquals(200, $response->getStatusCode());
     }

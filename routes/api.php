@@ -20,28 +20,34 @@ Route::post('/v1/auth/verifyauth', [AuthController::class, 'verifyAuth']);
 Route::post('/v1/auth/logout', [AuthController::class, 'logout']);
 Route::post('/v1/auth/oauth', [AuthController::class, 'oauth']);
 
-// Classroom REST API
-Route::post('/v1/classrooms', [ClassroomController::class, 'create']);
-Route::get('/v1/classrooms', [ClassroomController::class, 'read']);
-Route::get('/v1/classrooms/{id}', [ClassroomController::class, 'readById']);
-Route::post('/v1/classrooms/{id}', [ClassroomController::class, 'update']);
-Route::delete('/v1/classrooms/{id}', [ClassroomController::class, 'delete']);
+Route::prefix('v1/classrooms')->group(function () {
+    Route::get('/', [ClassroomController::class, 'read']);
+    Route::get('/{id}', [ClassroomController::class, 'readById']);
+    Route::post('/', [ClassroomController::class, 'create']);
+    Route::put('/{id}', [ClassroomController::class, 'update']);
+    Route::delete('/{id}', [ClassroomController::class, 'delete']);
+});
 
-// User REST API
-Route::get('/v1/users', [UserController::class, 'read']);
-Route::get('/v1/users/{id}', [UserController::class, 'readById']);
-Route::post('/v1/users/{id}', [UserController::class, 'update']);
-Route::delete('/v1/users/{id}', [UserController::class, 'delete']);
+Route::prefix('v1/users')->group(function () {
+    Route::get('/', [UserController::class, 'read']);
+    Route::get('/{id}', [UserController::class, 'readById']);
+    Route::post('/', [UserController::class, 'create']);
+    Route::put('/{id}', [UserController::class, 'update']);
+    Route::delete('/{id}', [UserController::class, 'delete']);
+});
 
-// Material REST API
-Route::post('/v1/materials', [MaterialController::class, 'create']);
-Route::get('/v1/materials', [MaterialController::class, 'read']);
-Route::get('/v1/materials/{id}', [MaterialController::class, 'readById']);
-Route::post('/v1/materials/{id}', [MaterialController::class, 'update']);
-Route::delete('/v1/materials/{id}', [MaterialController::class, 'delete']);
-// Submissions REST API
-Route::post('/v1/submissions', [SubmissionController::class, 'create']);
-Route::get('/v1/materials/{materialId}/submissions', [SubmissionController::class, 'read']);
-Route::get('/v1/submissions/{id}', [SubmissionController::class, 'readById']);
-Route::post('/v1/submissions/{id}', [SubmissionController::class, 'update']);
-Route::delete('/v1/submissions/{id}', [SubmissionController::class, 'delete']);
+Route::prefix('v1/materials')->group(function () {
+    Route::get('/', [MaterialController::class, 'read']);
+    Route::get('/{id}', [MaterialController::class, 'readById']);
+    Route::post('/', [MaterialController::class, 'create']);
+    Route::put('/{id}', [MaterialController::class, 'update']);
+    Route::delete('/{id}', [MaterialController::class, 'delete']);
+});
+
+Route::prefix('v1/submissions')->group(function () {
+    Route::get('/material/{materialId}', [SubmissionController::class, 'read']);
+    Route::get('/{id}', [SubmissionController::class, 'readById']);
+    Route::post('/', [SubmissionController::class, 'create']);
+    Route::put('/{id}', [SubmissionController::class, 'update']);
+    Route::delete('/{id}', [SubmissionController::class, 'delete']);
+});
