@@ -10,8 +10,7 @@ Route::get('/user', function (Request $request) {
 
 Route::prefix('v2/users')->group(function () {
     // Auth Endpoints
-    Route::post('/register', [UserController::class, 'register']);
-    Route::post('/login', [UserController::class, 'login']);
+    Route::post('/auth', [UserController::class, 'auth']);
     Route::get('/verify', [UserController::class, 'verify']);
     Route::get('/logout', [UserController::class, 'logout']);
 });
