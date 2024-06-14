@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 abstract class Controller
@@ -96,6 +97,34 @@ abstract class Controller
     }
 
     /**
+     * Handle the file upload.
+     *
+     * @param \Illuminate\Http\Request $request The request object.
+     * @param string $inputName The name of the input field in the request. Defaults to 'file'.
+     * @param string $disk The disk in which the file will be stored. Defaults to 'public'.
+     *
+     * @return string The URL of the uploaded file.
+     */
+    protected function uploadFile(Request $request, $inputName = 'file', $disk = 'public')
+    {
+        // Validate the request
+        $request->validate([
+            $inputName => 'required|file|mimes:jpg,jpeg,png,svg',
+        ]);
+
+        // Retrieve the file from the request
+        $file = $request->file($inputName);
+
+        // Store the file and get the stored filename
+        $filename = $file->store('uploads', $disk);
+
+        // Return the public URL
+        return basename($filename);
+    }
+
+    // TODO: function to delete file
+
+    /**
      * Validate input and prevent overinput
      *
      * @param Request $request The response containing the request.
@@ -120,6 +149,9 @@ abstract class Controller
      */
     protected function jsonResponse($data, $status = 200)
     {
+        if (isset($data['status'])) {
+            $status = $data['status'];
+        }
         return response()->json($data, $status);
     }
 

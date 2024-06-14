@@ -22,6 +22,10 @@ class UserController extends Controller
         'verify|logout' => [
             'remember_token' => ['required', 'string', 'max:255'],
         ],
+        'update_profile' => [
+            'id' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
+        ],
     ];
 
     public function auth(Request $req)
@@ -53,7 +57,7 @@ class UserController extends Controller
             $user->save();
             return $user;
         } else {
-            return $this->jsonResponse(['message' => $user->password.' '.$data['password']], 401);
+            return ['message' => "Invalid password", 'status' => 401];
         }
     }
 
@@ -82,5 +86,23 @@ class UserController extends Controller
         $user->remember_token = null;
         $user->save();
         return $user ? $this->jsonResponse(['message' => 'Logged out']) : $this->jsonResponse(['message' => 'Invalid token'], 401);
+    }
+
+    public function update_profile(Request $req)
+    {
+        $data = $this->validateRequest($req, $this->validation['update_profile'], ['id', 'name']);
+
+        $this->update($data, $data['id']);
+
+        // Upload photo if it's included in the request
+        $filename = null;
+        if ($req->hasFile('photo')) {
+            $filename = $this->uploadFile($req, 'photo');
+            $this->model::where('id', $req['id'])->update(['photo' => $filename]);
+        }
+
+        // Return the updated user
+        $user = $this->model::find($data['id']);
+        return $this->jsonResponse($user);
     }
 }

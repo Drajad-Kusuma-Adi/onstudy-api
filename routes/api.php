@@ -9,8 +9,11 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::prefix('v2/users')->group(function () {
-    // Auth Endpoints
+    // Auth endpoints
     Route::post('/auth', [UserController::class, 'auth']);
     Route::get('/verify', [UserController::class, 'verify']);
     Route::get('/logout', [UserController::class, 'logout']);
+
+    // User endpoints
+    Route::post('/profile', [UserController::class, 'update_profile']);
 });
