@@ -19,7 +19,10 @@ class UserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255'],
             'password' => ['required', 'string', 'max:255'],
         ],
-        'verify|logout' => [
+        'verify' => [
+            'remember_token' => ['required', 'string', 'max:255'],
+        ],
+        'logout' => [
             'remember_token' => ['required', 'string', 'max:255'],
         ],
         'update_profile' => [
@@ -48,7 +51,7 @@ class UserController extends Controller
 
     private function login($req, $user)
     {
-        $data = $this->validateRequest($req, $this->validation['login'], ['email', 'password']);
+        $data = $this->validateRequest($req, $this->validation['login']);
 
         // Generate and assign a remember_token for authentication
         if (Hash::check($data['password'], $user->password)) {
@@ -63,7 +66,7 @@ class UserController extends Controller
 
     private function register($req)
     {
-        $data = $this->validateRequest($req, $this->validation['register'], ['name', 'email', 'password']);
+        $data = $this->validateRequest($req, $this->validation['register']);
         $initialPassword = $data['password'];
         $data['password'] = bcrypt($data['password']);
         $this->create($data);
@@ -72,7 +75,7 @@ class UserController extends Controller
 
     public function verify(Request $req)
     {
-        $data = $this->validateRequest($req, $this->validation['verify|logout'], ['remember_token']);
+        $data = $this->validateRequest($req, $this->validation['verify']);
         $user = $this->model::where('remember_token', $data['remember_token'])->first();
         // Check and respond based on the validity of the remember_token
         return $user ? $this->jsonResponse(['message' => 'Verified']) : $this->jsonResponse(['message' => 'Invalid token'], 401);
@@ -80,7 +83,7 @@ class UserController extends Controller
 
     public function logout(Request $req)
     {
-        $data = $this->validateRequest($req, $this->validation['verify|logout'], ['remember_token']);
+        $data = $this->validateRequest($req, $this->validation['logout']);
         $user = $this->model::where('remember_token', $data['remember_token'])->first();
         // Update remember_token to null for logout
         $user->remember_token = null;
@@ -90,7 +93,7 @@ class UserController extends Controller
 
     public function update_profile(Request $req)
     {
-        $data = $this->validateRequest($req, $this->validation['update_profile'], ['id', 'name']);
+        $data = $this->validateRequest($req, $this->validation['update_profile']);
 
         $this->update($data, $data['id']);
 
@@ -98,6 +101,10 @@ class UserController extends Controller
         $filename = null;
         if ($req->hasFile('photo')) {
             $filename = $this->uploadFile($req, 'photo');
+
+            // TODO: Delete old photo
+
+            // Update user photo
             $this->model::where('id', $req['id'])->update(['photo' => $filename]);
         }
 
@@ -105,4 +112,6 @@ class UserController extends Controller
         $user = $this->model::find($data['id']);
         return $this->jsonResponse($user);
     }
+
+    // TODO: Delete account function
 }

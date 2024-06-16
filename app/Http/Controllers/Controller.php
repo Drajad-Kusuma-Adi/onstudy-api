@@ -9,17 +9,19 @@ use Illuminate\Support\Str;
 abstract class Controller
 {
     protected $model;
+    protected $validation;
 
     /**
      * Read all records from the database.
      *
      * @return array The response containing the message and data.
      */
-    protected function read()
-    {
-        $records = $this->model::all();
-        return ['message' => 'Records found', 'data' => $records];
-    }
+    // !UNUSED
+    // protected function read()
+    // {
+    //     $records = $this->model::all();
+    //     return $records;
+    // }
 
     /**
      * Read a record by its ID from the database.
@@ -32,9 +34,27 @@ abstract class Controller
     {
         $record = $this->model::find($id);
         if ($record) {
-            return ['message' => 'Record found', 'data' => $record];
+            return $record;
         } else {
             return ['message' => 'Record not found'];
+        }
+    }
+
+    /**
+     * Read a record by a specific column and value from the database.
+     *
+     * @param string $column The column to search in.
+     * @param mixed $value The value to search for.
+     *
+     * @return array The matching records.
+     */
+    protected function readByColumn(string $column, $value)
+    {
+        $records = $this->model::where($column, $value)->get();
+        if ($records->isNotEmpty()) {
+            return $records;
+        } else {
+            return collect(['message' => 'Record not found']);
         }
     }
 
@@ -43,7 +63,7 @@ abstract class Controller
      *
      * @param \Illuminate\Http\Request $request The request object.
      *
-     * @return array The response containing the message and data.
+     * @return array The response containing data of the newly created record.
      */
     protected function create(Request $request)
     {
@@ -53,7 +73,7 @@ abstract class Controller
 
         $record = $this->model::create($data);
 
-        return ['message' => 'Record created', 'data' => $record];
+        return $record;
     }
 
 
@@ -63,7 +83,7 @@ abstract class Controller
      * @param \Illuminate\Http\Request $request The request object.
      * @param mixed $id The ID of the record.
      *
-     * @return array The response containing the message and data.
+     * @return array The response containing data of the updated record.
      */
     protected function update(Request $request, $id)
     {
@@ -72,7 +92,7 @@ abstract class Controller
         $record = $this->model::find($id);
         if ($record) {
             $record->update($data);
-            return ['message' => 'Record updated', 'data' => $record];
+            return $record;
         } else {
             return ['message' => 'Record not found'];
         }
@@ -129,12 +149,11 @@ abstract class Controller
      *
      * @param Request $request The response containing the request.
      * @param array $rules The rules to validate.
-     * @param array $acceptables The acceptable values.
      *
      * @return \Illuminate\Http\Request
-    */
-    protected function validateRequest(Request $request, array $rules, array $acceptables) {
-        $request->only($acceptables);
+     */
+    protected function validateRequest(Request $request, array $rules) {
+        $request->only(array_keys($rules));
         $request->validate($rules);
         return $request;
     }
