@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -117,6 +118,63 @@ abstract class Controller
     }
 
     /**
+     * Create a record in the database in regular case.
+     *
+     * @param \Illuminate\Http\Request $req The request object.
+     *
+     * @return \Illuminate\Http\JsonResponse The JSON response containing the created record.
+     */
+    public function regular_create(Request $req)
+    {
+        $data = $this->validateRequest($req, $this->validation['create']);
+        $record = $this->create($data);
+        return $this->jsonResponse($record);
+    }
+
+    /**
+     * Read a record by its ID from the database in regular case.
+     *
+     * @param \Illuminate\Http\Request $req The request object.
+     *
+     * @return \Illuminate\Http\JsonResponse The JSON response containing the read record.
+     */
+    public function regular_read_by_id(Request $req)
+    {
+        $data = $this->validateRequest($req, ['id' => ['required', 'uuid']]);
+        $record = $this->readById($data['id']);
+        return $this->jsonResponse($record);
+    }
+
+    /**
+     * Update a record in the database in regular case.
+     *
+     * @param \Illuminate\Http\Request $req The request object.
+     *
+     * @return \Illuminate\Http\JsonResponse The JSON response containing the updated record.
+     */
+    public function regular_update(Request $req)
+    {
+        $data = $this->validateRequest($req, $this->validation['update']);
+        $record = $this->update($data, $data['id']);
+        return $this->jsonResponse($record);
+    }
+
+    /**
+     * Delete a record from the database in regular case.
+     *
+     * @param \Illuminate\Http\Request $req The request object.
+     *
+     * @return \Illuminate\Http\JsonResponse The response containing the message that the object is deleted.
+     */
+    public function regular_delete(Request $req)
+    {
+        $data = $this->validateRequest($req, ['id' => ['required', 'uuid']]);
+        $record = $this->delete($data['id']);
+        return $this->jsonResponse($record);
+    }
+
+
+    /**
      * Handle the file upload.
      *
      * @param \Illuminate\Http\Request $request The request object.
@@ -142,7 +200,24 @@ abstract class Controller
         return basename($filename);
     }
 
-    // TODO: function to delete file
+    /**
+     * Delete a file from storage.
+     *
+     * @param string $file The name of the file to delete.
+     * @param string $disk The disk in which the file is stored. Defaults to 'public'.
+     *
+     * @return bool Whether the file was successfully deleted.
+     */
+    protected function deleteFile($file, $disk = 'public')
+    {
+        $path = Storage::disk($disk)->path("uploads/$file");
+
+        if (file_exists($path)) {
+            return Storage::disk($disk)->delete("uploads/$file");
+        }
+
+        return false;
+    }
 
     /**
      * Validate input and prevent overinput

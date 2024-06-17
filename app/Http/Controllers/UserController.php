@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -94,7 +95,7 @@ class UserController extends Controller
     public function update_profile(Request $req)
     {
         $data = $this->validateRequest($req, $this->validation['update_profile']);
-
+        $oldPhoto = $this->model::where('id', $req['id'])->first()->photo;
         $this->update($data, $data['id']);
 
         // Upload photo if it's included in the request
@@ -102,7 +103,10 @@ class UserController extends Controller
         if ($req->hasFile('photo')) {
             $filename = $this->uploadFile($req, 'photo');
 
-            // TODO: Delete old photo
+            // Delete old photo if it exists
+            if ($oldPhoto) {
+                $this->deleteFile($oldPhoto);
+            }
 
             // Update user photo
             $this->model::where('id', $req['id'])->update(['photo' => $filename]);
