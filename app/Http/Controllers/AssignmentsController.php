@@ -23,5 +23,17 @@ class AssignmentsController extends Controller
             'description' => ['required', 'string'],
             'deadline' => ['required', 'date'],
         ],
+
+        // Specific endpoints
+        'read_by_classroom_id' => [
+            'id' => ['required', 'uuid'],
+        ]
     ];
+
+    public function read_by_classroom_id(Request $req)
+    {
+        $data = $this->validateRequest($req, $this->validation['read_by_classroom_id']);
+        $assignments = $this->readByColumn('classroom_id', $data['id']);
+        return $this->jsonResponse($assignments);
+    }
 }

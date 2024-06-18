@@ -20,5 +20,17 @@ class QuestionsController extends Controller
             'question' => ['required', 'string'],
             'number' => ['required', 'integer'],
         ],
+
+        // Specific endpoints
+        'read_by_assignment_id' => [
+            'id' => ['required', 'uuid'],
+        ]
     ];
+
+    public function read_by_assignment_id(Request $req)
+    {
+        $data = $this->validateRequest($req, $this->validation['read_by_assignment_id']);
+        $questions = $this->readByColumn('assignment_id', $data['id']);
+        return $this->jsonResponse($questions);
+    }
 }

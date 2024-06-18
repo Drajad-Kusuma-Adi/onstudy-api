@@ -24,23 +24,23 @@ class UserClassroomController extends Controller
 
         // Specific methods
         'read_user_classroom_by_user_id' => [
-            'user_id' => ['required', 'uuid'],
+            'id' => ['required', 'uuid'],
         ],
         'read_user_classroom_by_classroom_id' => [
-            'classroom_id' => ['required', 'uuid'],
+            'id' => ['required', 'uuid'],
         ],
     ];
 
     public function read_user_classroom_by_user_id(Request $req) {
         $data = $this->validateRequest($req, $this->validation['read_user_classroom_by_user_id']);
-        $classroom = $this->readByColumn('user_id', $data['user_id']);
+        $classroom = $this->readByColumn('user_id', $data['id']);
         return $this->jsonResponse($classroom);
     }
 
     public function read_user_classroom_by_classroom_id(Request $req)
     {
         $data = $this->validateRequest($req, $this->validation['read_user_classroom_by_classroom_id']);
-        $classroom = $this->readByColumn('classroom_id', $data['classroom_id']);
+        $classroom = $this->readByColumn('classroom_id', $data['id']);
         return $this->jsonResponse($classroom);
     }
 }

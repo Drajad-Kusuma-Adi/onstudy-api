@@ -20,5 +20,17 @@ class SubmissionsController extends Controller
             'assignment_id' => ['required', 'uuid'],
             'grade' => ['required', 'integer'],
         ],
+
+        // Specific endpoints
+        'read_by_assignment_id' => [
+            'id' => ['required', 'uuid'],
+        ]
     ];
+
+    public function read_by_assignment_id(Request $req)
+    {
+        $data = $this->validateRequest($req, $this->validation['read_by_assignment_id']);
+        $questions = $this->readByColumn('assignment_id', $data['id']);
+        return $this->jsonResponse($questions);
+    }
 }

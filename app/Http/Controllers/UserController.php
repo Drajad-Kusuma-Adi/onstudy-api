@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -27,9 +26,12 @@ class UserController extends Controller
             'remember_token' => ['required', 'string', 'max:255'],
         ],
         'update_profile' => [
-            'id' => ['required', 'string', 'max:255'],
+            'id' => ['required', 'uuid'],
             'name' => ['required', 'string', 'max:255'],
         ],
+        'delete_user' => [
+            'id' => ['required', 'uuid'],
+        ]
     ];
 
     public function auth(Request $req)
@@ -116,6 +118,4 @@ class UserController extends Controller
         $user = $this->model::find($data['id']);
         return $this->jsonResponse($user);
     }
-
-    // TODO: Delete account function
 }
