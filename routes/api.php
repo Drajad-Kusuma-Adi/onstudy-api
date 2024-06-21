@@ -7,12 +7,11 @@ use App\Http\Controllers\QuestionsController;
 use App\Http\Controllers\SubmissionsController;
 use App\Http\Controllers\UserClassroomController;
 use App\Http\Controllers\UserController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+// Route::get('/user', function (Request $request) {
+//     return $request->user();
+// })->middleware('auth:sanctum');
 
 // User endpoints
 Route::prefix('v2/users')->group(function() {
@@ -38,12 +37,25 @@ function defineCrudRoutes($prefix, $controller) {
 }
 
 // Define routes for each resources
-defineCrudRoutes('classrooms', ClassroomController::class);
-defineCrudRoutes('user_classrooms', UserClassroomController::class);
-defineCrudRoutes('assignments', AssignmentsController::class);
-defineCrudRoutes('questions', QuestionsController::class);
-defineCrudRoutes('answers', AnswersController::class);
-defineCrudRoutes('submissions', SubmissionsController::class);
+$resources = [
+    'classrooms' => ClassroomController::class,
+    'user_classrooms' => UserClassroomController::class,
+    'assignments' => AssignmentsController::class,
+    'questions' => QuestionsController::class,
+    'answers' => AnswersController::class,
+    'submissions' => SubmissionsController::class,
+];
+foreach ($resources as $key => $value) {
+    defineCrudRoutes($key, $value);
+}
+
+// !Use data array and foreach loop it instead
+// defineCrudRoutes('classrooms', ClassroomController::class);
+// defineCrudRoutes('user_classrooms', UserClassroomController::class);
+// defineCrudRoutes('assignments', AssignmentsController::class);
+// defineCrudRoutes('questions', QuestionsController::class);
+// defineCrudRoutes('answers', AnswersController::class);
+// defineCrudRoutes('submissions', SubmissionsController::class);
 
 // Specific endpoints for specific needs
 Route::prefix('v2/classrooms')->group(function() {
@@ -55,6 +67,7 @@ Route::prefix('v2/user_classrooms')->group(function() {
 });
 Route::prefix('v2/assignments')->group(function() {
     Route::get('/read_by_classroom_id', [AssignmentsController::class, 'read_by_classroom_id']);
+    Route::post('/create_full_assignment', [AssignmentsController::class, 'create_full_assignment']);
 });
 Route::prefix('v2/questions')->group(function() {
     Route::get('/read_by_assignment_id', [QuestionsController::class, 'read_by_assignment_id']);
