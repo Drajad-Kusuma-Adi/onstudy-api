@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Models\UserClassroom;
 use Illuminate\Http\Request;
 
@@ -21,26 +22,26 @@ class UserClassroomController extends Controller
             'classroom_id' => ['required', 'uuid'],
             'role' => ['required', 'string', 'in:Student,Teacher'],
         ],
-
-        // Specific methods
-        'read_user_classroom_by_user_id' => [
-            'id' => ['required', 'uuid'],
-        ],
-        'read_user_classroom_by_classroom_id' => [
-            'id' => ['required', 'uuid'],
-        ],
     ];
 
     public function read_user_classroom_by_user_id(Request $req) {
-        $data = $this->validateRequest($req, $this->validation['read_user_classroom_by_user_id']);
+        $data = $this->validateRequest($req, ['id' => ['required', 'uuid']]);
         $classroom = $this->readByColumn('user_id', $data['id']);
         return $this->jsonResponse($classroom);
     }
 
     public function read_user_classroom_by_classroom_id(Request $req)
     {
-        $data = $this->validateRequest($req, $this->validation['read_user_classroom_by_classroom_id']);
+        $data = $this->validateRequest($req, ['id' => ['required', 'uuid']]);
         $classroom = $this->readByColumn('classroom_id', $data['id']);
         return $this->jsonResponse($classroom);
+    }
+
+    public function get_teacher(Request $req)
+    {
+        $data = $this->validateRequest($req, ['id' => ['required', 'uuid']]);
+        $classroom = UserClassroom::where('user_id', $data['id'])->where('role', 'Teacher')->first();
+        $teacher = User::find($classroom['user_id']);
+        return $this->jsonResponse($teacher);
     }
 }

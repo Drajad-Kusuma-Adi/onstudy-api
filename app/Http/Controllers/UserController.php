@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\JsonResponse;
+use Throwable;
 
 class UserController extends Controller
 {
-    protected $model = User::class;
-    protected $validation = [
+    protected array $validation = [
         'register' => [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
@@ -31,91 +33,111 @@ class UserController extends Controller
         ],
         'delete_user' => [
             'id' => ['required', 'uuid'],
-        ]
+        ],
     ];
 
-    public function auth(Request $req)
-    {
-        // Check if the user exists
-        $user = $this->model::where('email', $req->input('email'))->first();
-
-        if ($user) {
-            // If user exists, validate login data
-            return $this->jsonResponse($this->login($req, $user));
-        } else {
-            // If user does not exist, validate registration data and register the user
-            $this->register($req);
-
-            // Login the user after registration
-            $user = $this->model::where('email', $req->input('email'))->first();
-            return $this->jsonResponse($this->login($req, $user));
-        }
-    }
-
-    private function login($req, $user)
+    public function login(Request $req): JsonResponse
     {
         $data = $this->validateRequest($req, $this->validation['login']);
 
-        // Generate and assign a remember_token for authentication
-        if (Hash::check($data['password'], $user->password)) {
-            $token = bin2hex(random_bytes(16));
-            $user->remember_token = $token;
-            $user->save();
-            return $user;
+        // Check if the user exists
+        $user = User::where('email', $data['email'])->first();
+
+        if ($user) {
+            // Validate login data
+            if (Hash::check($data['password'], $user->password)) {
+                $token = bin2hex(random_bytes(16));
+                $user->remember_token = $token;
+                $user->save();
+                return response()->json($user);
+            } else {
+                return response()->json(['message' => "Invalid password"], 401);
+            }
         } else {
-            return ['message' => "Invalid password", 'status' => 401];
+            return response()->json(['message' => "User does not exist"], 404);
         }
     }
 
-    private function register($req)
+    public function register(Request $req): JsonResponse
     {
         $data = $this->validateRequest($req, $this->validation['register']);
-        $initialPassword = $data['password'];
-        $data['password'] = bcrypt($data['password']);
-        $this->create($data);
-        $data['password'] = $initialPassword;
+        $data['password'] = Hash::make($data['password']);
+
+        DB::beginTransaction();
+        try {
+            $user = User::create($data);
+            DB::commit();
+            return $this->jsonResponse($user);  // Success response
+        } catch (Throwable $e) {
+            DB::rollBack();
+            return $this->jsonResponse(['message' => 'Registration failed', 'error' => $e->getMessage()], 500);
+        }
     }
 
-    public function verify(Request $req)
+    public function verify(Request $req): JsonResponse
     {
         $data = $this->validateRequest($req, $this->validation['verify']);
-        $user = $this->model::where('remember_token', $data['remember_token'])->first();
+        $user = User::where('remember_token', $data['remember_token'])->first();
+
         // Check and respond based on the validity of the remember_token
         return $user ? $this->jsonResponse(['message' => 'Verified']) : $this->jsonResponse(['message' => 'Invalid token'], 401);
     }
 
-    public function logout(Request $req)
+    public function logout(Request $req): JsonResponse
     {
         $data = $this->validateRequest($req, $this->validation['logout']);
-        $user = $this->model::where('remember_token', $data['remember_token'])->first();
-        // Update remember_token to null for logout
-        $user->remember_token = null;
-        $user->save();
-        return $user ? $this->jsonResponse(['message' => 'Logged out']) : $this->jsonResponse(['message' => 'Invalid token'], 401);
+        $user = User::where('remember_token', $data['remember_token'])->first();
+
+        if ($user) {
+            // Update remember_token to null for logout
+            $user->remember_token = null;
+            $user->save();
+            return $this->jsonResponse(['message' => 'Logged out']);
+        } else {
+            return $this->jsonResponse(['message' => 'Invalid token'], 401);
+        }
     }
 
-    public function update_profile(Request $req)
+    public function update_profile(Request $req): JsonResponse
     {
         $data = $this->validateRequest($req, $this->validation['update_profile']);
-        $oldPhoto = $this->model::where('id', $req['id'])->first()->photo;
-        $this->update($data, $data['id']);
 
         // Upload photo if it's included in the request
-        $filename = null;
         if ($req->hasFile('photo')) {
             $filename = $this->uploadFile($req, 'photo');
 
+            $user = User::findOrFail($data['id']);
+            $oldPhoto = $user->photo;
+
             // Delete old photo if it exists
-            if ($oldPhoto) {
+            if (!empty($oldPhoto)) {
                 $this->deleteFile($oldPhoto);
             }
 
-            // Update user photo
-            $this->model::where('id', $req['id'])->update(['photo' => $filename]);
+            // Update the user's photo
+            DB::beginTransaction();
+            try {
+                $user->update(['photo' => $filename]);
+                DB::commit();
+            } catch (Throwable $e) {
+                DB::rollBack();
+                return $this->jsonResponse(['message' => 'Update failed', 'error' => $e->getMessage()], 500);
+            }
         }
 
-        // Return the updated user
-        $user = $this->model::find($data['id']);
+        // Update user name if it's different from the old one
+        $user = User::findOrFail($data['id']);
+        if ($user->name !== $data['name']) {
+            DB::beginTransaction();
+            try {
+                $user->update(['name' => $data['name']]);
+                DB::commit();
+            } catch (Throwable $e) {
+                DB::rollBack();
+                return $this->jsonResponse(['message' => 'Update failed', 'error' => $e->getMessage()], 500);
+            }
+        }
+
         return $this->jsonResponse($user);
     }
 }
