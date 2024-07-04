@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\JsonResponse;
 use Throwable;
+use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
@@ -51,26 +52,31 @@ class UserController extends Controller
                 $user->save();
                 return response()->json($user);
             } else {
-                return response()->json(['message' => "Invalid password"], 401);
+                return response()->json(['message' => "Password salah"], 401);
             }
         } else {
-            return response()->json(['message' => "User does not exist"], 404);
+            return response()->json(['message' => "Email tidak ditemukan"], 404);
         }
     }
 
     public function register(Request $req): JsonResponse
     {
         $data = $this->validateRequest($req, $this->validation['register']);
+
+        // Manually append id and hash password
+        $data['id'] = Str::uuid();
         $data['password'] = Hash::make($data['password']);
 
         DB::beginTransaction();
         try {
             $user = User::create($data);
             DB::commit();
-            return $this->jsonResponse($user);  // Success response
+            $user->remember_token = bin2hex(random_bytes(16));
+            $user->save();
+            return $this->jsonResponse($user); // Success response
         } catch (Throwable $e) {
             DB::rollBack();
-            return $this->jsonResponse(['message' => 'Registration failed', 'error' => $e->getMessage()], 500);
+            return $this->jsonResponse(['message' => 'Pendaftaran gagal', 'error' => $e->getMessage()], 500);
         }
     }
 
@@ -80,7 +86,7 @@ class UserController extends Controller
         $user = User::where('remember_token', $data['remember_token'])->first();
 
         // Check and respond based on the validity of the remember_token
-        return $user ? $this->jsonResponse(['message' => 'Verified']) : $this->jsonResponse(['message' => 'Invalid token'], 401);
+        return $user ? $this->jsonResponse(['message' => 'Terverifikasi']) : $this->jsonResponse(['message' => 'Token salah'], 401);
     }
 
     public function logout(Request $req): JsonResponse
@@ -94,7 +100,7 @@ class UserController extends Controller
             $user->save();
             return $this->jsonResponse(['message' => 'Logged out']);
         } else {
-            return $this->jsonResponse(['message' => 'Invalid token'], 401);
+            return $this->jsonResponse(['message' => 'Token salah'], 401);
         }
     }
 
@@ -121,7 +127,7 @@ class UserController extends Controller
                 DB::commit();
             } catch (Throwable $e) {
                 DB::rollBack();
-                return $this->jsonResponse(['message' => 'Update failed', 'error' => $e->getMessage()], 500);
+                return $this->jsonResponse(['message' => 'Update gagal', 'error' => $e->getMessage()], 500);
             }
         }
 
@@ -134,7 +140,7 @@ class UserController extends Controller
                 DB::commit();
             } catch (Throwable $e) {
                 DB::rollBack();
-                return $this->jsonResponse(['message' => 'Update failed', 'error' => $e->getMessage()], 500);
+                return $this->jsonResponse(['message' => 'Update gagal', 'error' => $e->getMessage()], 500);
             }
         }
 
