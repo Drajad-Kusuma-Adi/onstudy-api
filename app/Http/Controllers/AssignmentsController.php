@@ -5,34 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Answer;
 use App\Models\Assignment;
 use App\Models\Question;
-use Exception;
+use Throwable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class AssignmentsController extends Controller
 {
-    protected $model = Assignment::class;
-    protected $validation = [
-        // Regular CRUD
-        'create' => [
-            'classroom_id' => ['required', 'uuid'],
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['required', 'string'],
-            'deadline' => ['required', 'date'],
-        ],
-        'update' => [
-            'id' => ['required', 'uuid'],
-            'classroom_id' => ['required', 'uuid'],
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['required', 'string'],
-            'deadline' => ['required', 'date'],
-        ],
-
-        // Specific endpoints
-        'read_by_classroom_id' => [
-            'id' => ['required', 'uuid'],
-        ],
+    private $validation = [
         'create_full_assignment' => [
             'classroom_id' => ['required', 'uuid'],
             'title' => ['required', 'string', 'max:255'],
@@ -42,20 +22,11 @@ class AssignmentsController extends Controller
         ]
     ];
 
-    public function read_by_classroom_id(Request $req)
-    {
-        $data = $this->validateRequest($req, $this->validation['read_by_classroom_id']);
-        $assignments = $this->readByColumn('classroom_id', $data['id']);
-        return $this->jsonResponse($assignments);
-    }
-
     public function create_full_assignment(Request $req)
     {
         $data = $this->validateRequest($req, $this->validation['create_full_assignment']);
 
-        // Start a database transaction
         DB::beginTransaction();
-
         try {
             // Create assignment
             $assignment = $this->createAssignment($data);
@@ -65,13 +36,12 @@ class AssignmentsController extends Controller
             $answers = [];
 
             // Collect questions and answers for batch insertion
-            foreach ($data['questions'] as $key => $questionData) {
+            foreach ($data['questions'] as $questionData) {
                 $questionId = Str::uuid();
                 $questions[] = [
                     'id' => $questionId,
                     'assignment_id' => $assignment->id,
-                    'question' => $questionData['question'],
-                    'number' => $key + 1
+                    'question' => $questionData['question']
                 ];
 
                 foreach ($questionData['answers'] as $answerData) {
@@ -92,13 +62,13 @@ class AssignmentsController extends Controller
 
             // Commit the transaction
             DB::commit();
-        } catch (Exception $err) {
+        } catch (Throwable $err) {
             // Rollback the transaction if an error occurs
             DB::rollBack();
             throw $err;
         }
 
-        return $this->jsonResponse($assignment);
+        return response()->json($assignment);
     }
     // Helper method for create_full_assignment method
     private function createAssignment($data)

@@ -15,7 +15,6 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('assignment_id');
             $table->string('question');
-            $table->integer('number');
             $table->timestamps();
             $table->foreign('assignment_id')->references('id')->on('assignments');
         });

@@ -6,13 +6,13 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Http\JsonResponse;
 use Throwable;
 use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
-    protected array $validation = [
+    // TODO: There's no point in separating this, should put thes inline instead. But I don't want to fix what's not really broken, yet.
+    private array $validation = [
         'register' => [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
@@ -32,12 +32,9 @@ class UserController extends Controller
             'id' => ['required', 'uuid'],
             'name' => ['required', 'string', 'max:255'],
         ],
-        'delete_user' => [
-            'id' => ['required', 'uuid'],
-        ],
     ];
 
-    public function login(Request $req): JsonResponse
+    public function login(Request $req)
     {
         $data = $this->validateRequest($req, $this->validation['login']);
 
@@ -53,13 +50,14 @@ class UserController extends Controller
                 return response()->json($user);
             } else {
                 return response()->json(['message' => "Password salah"], 401);
+                return response()->json(['message' => "Password salah"], 401);
             }
         } else {
             return response()->json(['message' => "Email tidak ditemukan"], 404);
         }
     }
 
-    public function register(Request $req): JsonResponse
+    public function register(Request $req)
     {
         $data = $this->validateRequest($req, $this->validation['register']);
 
@@ -73,23 +71,23 @@ class UserController extends Controller
             DB::commit();
             $user->remember_token = bin2hex(random_bytes(16));
             $user->save();
-            return $this->jsonResponse($user); // Success response
+            return response()->json($user); // Success response
         } catch (Throwable $e) {
             DB::rollBack();
-            return $this->jsonResponse(['message' => 'Pendaftaran gagal', 'error' => $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 500);
         }
     }
 
-    public function verify(Request $req): JsonResponse
+    public function verify(Request $req)
     {
         $data = $this->validateRequest($req, $this->validation['verify']);
         $user = User::where('remember_token', $data['remember_token'])->first();
 
         // Check and respond based on the validity of the remember_token
-        return $user ? $this->jsonResponse(['message' => 'Terverifikasi']) : $this->jsonResponse(['message' => 'Token salah'], 401);
+        return $user ? response()->json(['message' => 'Terverifikasi']) : response()->json(['message' => 'Token salah'], 401);
     }
 
-    public function logout(Request $req): JsonResponse
+    public function logout(Request $req)
     {
         $data = $this->validateRequest($req, $this->validation['logout']);
         $user = User::where('remember_token', $data['remember_token'])->first();
@@ -98,13 +96,13 @@ class UserController extends Controller
             // Update remember_token to null for logout
             $user->remember_token = null;
             $user->save();
-            return $this->jsonResponse(['message' => 'Logged out']);
+            return response()->json(['message' => 'Logged out']);
         } else {
-            return $this->jsonResponse(['message' => 'Token salah'], 401);
+            return response()->json(['message' => 'Token salah'], 401);
         }
     }
 
-    public function update_profile(Request $req): JsonResponse
+    public function update_profile(Request $req)
     {
         $data = $this->validateRequest($req, $this->validation['update_profile']);
 
@@ -127,7 +125,7 @@ class UserController extends Controller
                 DB::commit();
             } catch (Throwable $e) {
                 DB::rollBack();
-                return $this->jsonResponse(['message' => 'Update gagal', 'error' => $e->getMessage()], 500);
+                return response()->json(['message' => $e->getMessage()], 500);
             }
         }
 
@@ -140,10 +138,10 @@ class UserController extends Controller
                 DB::commit();
             } catch (Throwable $e) {
                 DB::rollBack();
-                return $this->jsonResponse(['message' => 'Update gagal', 'error' => $e->getMessage()], 500);
+                return response()->json(['message' => $e->getMessage()], 500);
             }
         }
 
-        return $this->jsonResponse($user);
+        return response()->json($user);
     }
 }

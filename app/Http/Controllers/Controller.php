@@ -70,20 +70,4 @@ abstract class Controller
         $request->validate($rules);
         return $request->all();
     }
-
-    /**
-     * Return a JSON response.
-     *
-     * @param mixed $data
-     * @param int|null $status
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    protected function jsonResponse($data, ?int $status = 200): \Illuminate\Http\JsonResponse
-    {
-        if (empty($status) && isset($data['status'])) {
-            $status = $data['status'];
-        }
-        return response()->json($data, $status);
-    }
 }

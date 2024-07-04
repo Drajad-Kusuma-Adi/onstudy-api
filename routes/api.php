@@ -13,11 +13,20 @@ use Illuminate\Support\Facades\Route;
 //     return $request->user();
 // })->middleware('auth:sanctum');
 
-// User endpoints
-Route::prefix('v2/users')->group(function() {
-    // Auth endpoints
-    Route::post('/register', [UserController::class, 'register']);
-    Route::post('/login', [UserController::class, 'login']);
-    Route::get('/verify', [UserController::class, 'verify']);
-    Route::post('/logout', [UserController::class, 'logout']);
+Route::prefix('v2')->group(function() {
+    // User endpoints
+    Route::prefix('/users')->group(function() {
+        Route::post('/register', [UserController::class, 'register']);
+        Route::post('/login', [UserController::class, 'login']);
+        Route::get('/verify', [UserController::class, 'verify']);
+        Route::post('/logout', [UserController::class, 'logout']);
+        Route::post('/update_profile', [UserController::class, 'update_profile']);
+    });
+
+    // Classroom endpoints
+    Route::prefix('/classrooms')->group(function() {
+        Route::post('/create_classroom', [ClassroomController::class, 'create_classroom']);
+        Route::post('/join_classroom', [ClassroomController::class, 'join_classroom']);
+        Route::post('/get_classrooms_by_user_id', [ClassroomController::class, 'get_classrooms_by_user_id']);
+    });
 });
