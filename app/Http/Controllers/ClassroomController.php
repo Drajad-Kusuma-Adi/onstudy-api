@@ -59,6 +59,15 @@ class ClassroomController extends Controller
             UserClassroom::create($data);
             $classroom = Classroom::find($data['classroom_id']);
             $classroom["teacher"] = User::find($data['user_id']);
+
+            if ($data['user_id'] === $classroom['teacher']['id']) {
+                throw new \Exception("Tidak bisa bergabung dengan kelas yang anda ajar.");
+            }
+
+            if (UserClassroom::where("classroom_id", $data['classroom_id'])->where("user_id", $data['user_id'])->exists()) {
+                throw new \Exception("Anda sudah bergabung dengan kelas ini.");
+            }
+
             DB::commit();
             return response()->json($classroom);
         } catch (Throwable $e) {
