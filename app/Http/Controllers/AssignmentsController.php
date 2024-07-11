@@ -26,6 +26,10 @@ class AssignmentsController extends Controller
     {
         $data = $this->validateRequest($req, $this->validation['create_full_assignment']);
 
+        if ($data['deadline'] < date('Y-m-d')) {
+            return response()->json(['message' => 'Deadline cannot be in the past'], 400);
+        }
+
         DB::beginTransaction();
         try {
             // Create assignment
@@ -41,7 +45,9 @@ class AssignmentsController extends Controller
                 $questions[] = [
                     'id' => $questionId,
                     'assignment_id' => $assignment->id,
-                    'question' => $questionData['question']
+                    'question' => $questionData['question'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ];
 
                 foreach ($questionData['answers'] as $answerData) {
@@ -49,7 +55,9 @@ class AssignmentsController extends Controller
                         'id' => Str::uuid(),
                         'question_id' => $questionId,
                         'answer' => $answerData['answer'],
-                        'right_answer' => $answerData['right_answer']
+                        'right_answer' => $answerData['right_answer'],
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ];
                 }
             }
@@ -65,7 +73,7 @@ class AssignmentsController extends Controller
         } catch (Throwable $err) {
             // Rollback the transaction if an error occurs
             DB::rollBack();
-            throw $err;
+            return response()->json(['message' => $err->getMessage()], 500);
         }
 
         return response()->json($assignment);
@@ -81,4 +89,44 @@ class AssignmentsController extends Controller
             'deadline' => $data['deadline']
         ]);
     }
+
+    public function get_full_assignments_by_classroom_id(string $classroom_id) {
+        try {
+            $assignments = Assignment::where('classroom_id', $classroom_id)->get()->toArray();
+
+            foreach ($assignments as &$assignment) {
+                $assignment['questions'] = [];
+
+                $questions = Question::where('assignment_id', $assignment['id'])->get()->toArray();
+                foreach ($questions as &$question) {
+                    $question['answers'] = [];
+
+                    $answers = Answer::where('question_id', $question['id'])->get()->toArray();
+                    foreach ($answers as $answer) {
+                        $question['answers'][] = $answer;
+                    }
+                    $assignment['questions'][] = $question;
+                }
+            }
+
+            // Break the reference with the last element to potential bugs in case I modify this code again
+            unset($assignment);
+            unset($questions);
+            return response()->json($assignments);
+        } catch (Throwable $err) {
+            return response()->json(['message' => $err->getMessage()], 500);
+        }
+    }
+
+    // public function get_assignment_by_id(string $assignment_id) {
+    //     return response()->json(Assignment::find($assignment_id));
+    // }
+
+    // public function update_assignment(Request $req) {
+
+    // }
+
+    // public function delete_assignment(string $assignment_id) {
+    //     return response()->json(Assignment::destroy($assignment_id));
+    // }
 }

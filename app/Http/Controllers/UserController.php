@@ -144,4 +144,13 @@ class UserController extends Controller
 
         return response()->json($user);
     }
+
+    public function get_user_by_id(string $user_id) {
+        try {
+            $user = User::findOrFail($user_id);
+            return response()->json(User::find($user_id));
+        } catch (Throwable $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
 }
